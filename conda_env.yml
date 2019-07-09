@@ -19,3 +19,5 @@ dependencies:
   - tqdm
 # - mpi4py
 # - pycuda
+# - pybind11
+# - pyopencl
