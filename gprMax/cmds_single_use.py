@@ -492,3 +492,16 @@ class OutputDir(UserObjectSingle):
 
     def create(self, grid, uip):
         grid.outputdirectory = self.kwargs['dir']
+
+
+class NumberOfModelRuns(UserObjectSingle):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.order = 12
+
+    def create(self, grid, uip):
+        try:
+            grid.numberofmodelruns = self.kwargs['n']
+        except KeyError:
+            raise CmdInputError('#numberofmodelruns: requires exactly one parameter')
