@@ -210,7 +210,7 @@ class PrecusorNodesBase:
                                                    z,
                                                    field,
                                                    kx=self.interpolation,
-                                                   ky=.self.interpolation)
+                                                   ky=self.interpolation)
         f_i = interp_f(x_sg, z_sg)
         return f_i
 
