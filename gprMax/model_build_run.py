@@ -384,7 +384,7 @@ def run_model(args, currentmodelrun, modelend, numbermodelruns, inputfile, usern
         if G.gpu is None:
             if G.opencl is not None:
                 print("OpenCl Solver")
-                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G, True)
+                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G)
             else:
                 tsolve = solve_cpu(currentmodelrun, modelend, G)
         else:

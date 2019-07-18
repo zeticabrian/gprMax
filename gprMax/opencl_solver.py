@@ -194,8 +194,10 @@ class OpenClSolver(object):
 
 
     def traditional_kernel_build(self):
-        
+        # set the jinja engine
         trad_jinja_env = jinja2.Environment(loader=jinja2.PackageLoader(__name__, 'opencl_kernels'))
+        
+        # for field update
         if Material.maxpoles > 0:
             raise NotImplementedError
         else:
@@ -219,6 +221,8 @@ class OpenClSolver(object):
                 NZ_T = 1
             )
 
+        # check if the total constant memory exceeds the variable nbytes
+
         # for dispersive materials
         if Material.maxpoles > 0:
             raise NotImplementedError
@@ -228,7 +232,40 @@ class OpenClSolver(object):
 
         # if pmls
         if self.G.pmls:
-            raise NotImplementedError
+            pmlmodulelectric = 'pml_electric.cl'
+            pmlmodulemagnetic = 'pml_magnetic.cl'
+            kernel_pml_electric = trad_jinja_env.get_template(pmlmodulelectric).render(
+                REAL=self.datatypes['REAL'],
+                N_updatecoeffsE=self.G.updatecoeffsE.size, 
+                NY_MATCOEFFS=self.G.updatecoeffsE.shape[1], 
+                NX_FIELDS=self.G.Ex.shape[0], 
+                NY_FIELDS=self.G.Ex.shape[1],
+                NZ_FIELDS=self.G.Ex.shape[2], 
+                updateEVal = self.updateEVal,
+                updateHVal = self.updateHVal,
+                NX_ID=self.G.ID.shape[1], 
+                NY_ID=self.G.ID.shape[2], 
+                NZ_ID=self.G.ID.shape[3]
+            )
+
+            kernel_pml_magnetic = trad_jinja_env.get_template(pmlmodulemagnetic).render(
+                REAL=self.datatypes['REAL'], 
+                N_updatecoeffsH=self.G.updatecoeffsH.size, 
+                NY_MATCOEFFS=self.G.updatecoeffsH.shape[1], 
+                NX_FIELDS=self.G.Hx.shape[0], 
+                NY_FIELDS=self.G.Hx.shape[1], 
+                NZ_FIELDS=self.G.Hx.shape[2],
+                updateEVal = self.updateEVal,
+                updateHVal = self.updateHVal,
+                NX_ID=self.G.ID.shape[1], 
+                NY_ID=self.G.ID.shape[2], 
+                NZ_ID=self.G.ID.shape[3]
+            )
+
+            for pml in self.G.pmls:
+                pml.cl_set_workgroups(self.G)
+                pml.cl_initialize_arrays(self.queue)
+                pml.cl_set_program(self.queue, kernel_pml_electric, kernel_pml_magnetic)
 
         # if receviers
         if self.G.rxs:
@@ -270,9 +307,11 @@ class OpenClSolver(object):
                 print("Setting up Hertzian Dipole")
                 self.srcinfo1_hertzian_cl, self.srcinfo2_hertzian_cl, self.srcwaves_hertzian_cl = gpu_initialise_src_arrays(self.G.hertziandipoles, self.G, queue=self.queue, opencl=True)
             if self.G.magneticdipoles:
-                raise NotImplementedError
+                print("setting up Magnetic Dipoles")
+                self.srcinfo1_magnetic_cl, self.srcinfo2_magnetic_cl, self.srcwaves_magnetic_cl = gpu_initialise_src_arrays(self.G.magneticdipoles, self.G, queue=self.queue, opencl=True)
             if self.G.voltagesources:
-                raise NotImplementedError
+                print("setting up Volatge Sources")
+                self.srcinfo1_voltage_cl, self.srcinfo2_voltage_cl, self.srcwaves_voltage_cl = gpu_initialise_src_arrays(self.G.voltagesources, self.G, queue=self.queue, opencl=True)
 
         if self.G.snapshots:
             raise NotImplementedError
@@ -280,6 +319,8 @@ class OpenClSolver(object):
         self.store_output_prg = cl.Program(self.context, store_output_text).build()
         self.source_prg = cl.Program(self.context, sources_text).build()
         self.kernel_field_prg = cl.Program(self.context, kernel_fields_text).build()
+
+
 
 
     def solver(self, currentmodelrun, modelend, G, elementwisekernel=False):
@@ -405,12 +446,20 @@ class OpenClSolver(object):
                 kernel_field_event.wait()
 
                 for pml in self.G.pmls:
-                    warnings.warn("Not implemented as of now")
-                    pass
+                    pml.cl_update_magnetic(self.queue, G)
+                    
 
                 # update magnetic dipoles (sources)
                 if self.G.magneticdipoles:
-                    raise NotImplementedError
+                    source_event = self.source_prg.update_magnetic_dipole(
+                        self.queue, (1,1,1), None,
+                        np.int32(len(self.G.magneticdipoles)), np.int32(iteration),
+                        np.float32(self.G.dx), np.float32(self.G.dy), np.float32(self.G.dz),
+                        self.srcinfo1_magnetic_cl.data, self.srcinfo2_magnetic_cl.data,
+                        self.srcwaves_magnetic_cl.data, self.G.ID_cl.data,
+                        self.G.Hx_cl.data, self.G.Hy_cl.data, self.G.Hz_cl.data
+                    )
+                    source_event.wait()
 
                 if Material.maxpoles != 0:
                     raise NotImplementedError
@@ -425,11 +474,18 @@ class OpenClSolver(object):
                     kernel_field_event.wait()
 
                 for pml in self.G.pmls:
-                    warnings.warn("Not implemented as of now")
-                    pass
+                    pml.cl_update_electric(self.queue, G)
                 
                 if self.G.voltagesources:
-                    raise NotImplementedError
+                    source_event = self.source_prg.update_voltage_source(
+                        self.queue, (1,1,1), None,
+                        np.int32(len(self.G.voltagesources)), np.int32(iteration),
+                        np.float32(self.G.dx), np.float32(self.G.dy), np.float32(self.G.dz),
+                        self.srcinfo1_voltage_cl.data, self.srcinfo2_voltage_cl.data,
+                        self.srcwaves_voltage_cl.data, self.G.ID_cl.data,
+                        self.G.Ex_cl.data, self.G.Ey_cl.data, self.G.Ez_cl.data
+                    )
+                    source_event.wait()
 
                 if self.G.hertziandipoles:
                     source_event = self.source_prg.update_hertzian_dipole(
