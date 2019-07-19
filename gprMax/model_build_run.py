@@ -127,6 +127,7 @@ def run_model(args, currentmodelrun, modelend, numbermodelruns, inputfile, usern
         # OpenCL Solver
         if args.opencl:
             G.opencl = args.opencl 
+            
             # create the opencl solver object
             cl_solver = OpenClSolver()
 
@@ -384,13 +385,13 @@ def run_model(args, currentmodelrun, modelend, numbermodelruns, inputfile, usern
         if G.gpu is None:
             if G.opencl is not None:
                 print("OpenCl Solver")
-                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G)
+                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G, elementwisekernel=args.elwise)
             else:
                 tsolve = solve_cpu(currentmodelrun, modelend, G)
         else:
             if G.opencl is not None:
                 print("OpenCl Solver")
-                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G)
+                tsolve, memsolve = cl_solver.solver(currentmodelrun, modelend, G, elementwisekernel=args.elwise)
             else:
                 tsolve, memsolve = solve_gpu(currentmodelrun, modelend, G)
 
