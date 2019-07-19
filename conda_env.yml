@@ -17,7 +17,7 @@ dependencies:
 - pip:
   - terminaltables
   - tqdm
+  - pybind11
+  - pyopencl
 # - mpi4py
 # - pycuda
-# - pybind11
-# - pyopencl
