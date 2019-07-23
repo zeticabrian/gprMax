@@ -364,6 +364,10 @@ def build_pmls(G, pbar):
         pbar (class): Progress bar class instance.
     """
 
+    # Set default CFS parameters for PML if not given
+    if not G.cfs:
+        G.cfs = [CFS()]
+
     for key, value in G.pmlthickness.items():
         if value > 0:
             sumer = 0  # Sum of relative permittivities in PML slab
@@ -416,3 +420,14 @@ def build_pmls(G, pbar):
 
             pml.calculate_update_coeffs(averageer, averagemr, G)
             pbar.update()
+
+
+def print_pml(G):
+    if all(value == G.pmlthickness['x0'] for value in G.pmlthickness.values()):
+        pmlinfo = str(G.pmlthickness['x0'])
+    else:
+        pmlinfo = ''
+        for key, value in G.pmlthickness.items():
+            pmlinfo += '{}: {}, '.format(key, value)
+        pmlinfo = pmlinfo[:-2] + ' cells'
+    print('PML: formulation: {}, order: {}, thickness: {}'.format(G.pmlformulation, len(G.cfs), pmlinfo))

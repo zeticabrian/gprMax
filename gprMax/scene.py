@@ -10,6 +10,8 @@ from .cmds_geometry.cmds_geometry import UserObjectGeometry
 from .exceptions import CmdInputError
 from .cmds_geometry.fractal_box_builder import FractalBoxBuilder
 from .utilities import human_size
+from .grid import memory_check
+from .snapshots import memory_check as snapshot_memory_check
 
 
 class Scene:
@@ -85,6 +87,7 @@ class Scene:
 
         self.process_cmds(cmds_unique, G)
 
+
     def create_internal_objects(self, G):
 
         # gprMax API presents the user with UserObjects in order to build
@@ -102,7 +105,8 @@ class Scene:
         self.process_cmds(self.children_multiple, G)
 
         # Estimate and check memory (RAM) usage
-        G.check_memory_grids()
+        memory_check(G)
+        snapshot_memory_check(G)
 
         # Initialise an array for volumetric material IDs (solid), boolean
         # arrays for specifying materials not to be averaged (rigid),

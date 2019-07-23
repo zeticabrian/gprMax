@@ -154,6 +154,12 @@ class FDTDGrid(Grid):
         self.rxsteps = [0, 0, 0]
         self.snapshots = []
 
+    def initialise_grids(self):
+        """Function to call the initialisation of all grids."""
+        for g in [self] + self.subgrids:
+            g.initialise_geometry_arrays()
+            g.initialise_field_arrays()
+
     def initialise_geometry_arrays(self):
         """
         Initialise an array for volumetric material IDs (solid);
@@ -270,6 +276,40 @@ class FDTDGrid(Grid):
         self.Ty_gpu = gpuarray.to_gpu(self.Ty)
         self.Tz_gpu = gpuarray.to_gpu(self.Tz)
         self.updatecoeffsdispersive_gpu = gpuarray.to_gpu(self.updatecoeffsdispersive)
+
+    def initialise_2d(self):
+        # Add PEC boundaries to invariant direction in 2D modes
+        # N.B. 2D modes are a single cell slice of 3D grid
+        if '2D TMx' in self.mode:
+            # Ey & Ez components
+            self.ID[1, 0, :, :] = 0
+            self.ID[1, 1, :, :] = 0
+            self.ID[2, 0, :, :] = 0
+            self.ID[2, 1, :, :] = 0
+        elif '2D TMy' in self.mode:
+            # Ex & Ez components
+            self.ID[0, :, 0, :] = 0
+            self.ID[0, :, 1, :] = 0
+            self.ID[2, :, 0, :] = 0
+            self.ID[2, :, 1, :] = 0
+        elif '2D TMz' in self.mode:
+            # Ex & Ey components
+            self.ID[0, :, :, 0] = 0
+            self.ID[0, :, :, 1] = 0
+            self.ID[1, :, :, 0] = 0
+            self.ID[1, :, :, 1] = 0
+
+
+def memory_check(grid):
+    # Estimate and check memory (RAM) usage
+    grid.memory_estimate_basic()
+    grid.memory_check()
+    if grid.messages:
+        if grid.gpu is None:
+            print('\nMemory (RAM) required: ~{}\n'.format(human_size(grid.memoryusage)))
+        else:
+            print('\nMemory (RAM) required: ~{} host + ~{} GPU\n'.format(human_size(grid.memoryusage), human_size(grid.memoryusage)))
+
 
 
 def dispersion_analysis(G):
@@ -462,3 +502,15 @@ def Iz(x, y, z, Hx, Hy, Hz, G):
         Iz = G.dx * (Hx[x, y - 1, z] - Hx[x, y, z]) + G.dy * (Hy[x, y, z] - Hy[x - 1, y, z])
 
     return Iz
+
+
+class SuperGridCaller:
+
+    def __init__(self, G):
+        self.instances = [G] + G.subgrids
+
+    def call(self, f_name):
+
+        for obj in self.instances:
+            # call the function name provided on each grid instance
+            getattr(obj, f_name)()
