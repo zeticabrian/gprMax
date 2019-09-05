@@ -299,14 +299,13 @@ def get_host_info():
                     sockets = int(line.strip()[-1])
                 if 'Thread(s) per core' in line:
                     threadspercore = int(line.strip()[-1])
-                if 'CPU(s)' in line:
-                    logicalcores = int(line.strip()[-1])
                 if 'Core(s) per socket' in line:
                     corespersocket = int(line.strip()[-1])
         except subprocess.CalledProcessError:
             pass
 
         physicalcores = sockets * corespersocket
+        logicalcores = sockets * corespersocket * threadspercore
 
         # OS version
         osrelease = subprocess.check_output("cat /proc/sys/kernel/osrelease", shell=True).decode('utf-8').strip()
