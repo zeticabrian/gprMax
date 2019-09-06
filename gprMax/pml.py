@@ -302,7 +302,6 @@ class PML(object):
         """
 
         self.bpg = (int(np.ceil(((self.EPhi1.shape[1] + 1) * (self.EPhi1.shape[2] + 1) * (self.EPhi1.shape[3] + 1)) / G.tpb[0])), 1, 1)
-        print(self.bpg, G.tpb)
 
 
     def cl_set_workgroups(self, G):
@@ -313,8 +312,8 @@ class PML(object):
 
     def cl_initialize_arrays(self, queue):
         """Initialise PML field and coefficient arrays on OpenCL Device."""
-        import pyopencl as cl   
-        import pyopencl.array as cl_array  
+        import pyopencl as cl
+        import pyopencl.array as cl_array
 
         self.EPhi1_cl = cl_array.to_device(queue, self.EPhi1)
         self.EPhi2_cl = cl_array.to_device(queue, self.EPhi2)
@@ -363,8 +362,8 @@ class PML(object):
         self.update_magnetic_gpu = kernelsmagnetic.get_function('order' + str(len(self.CFS)) + '_' + self.direction)
 
     def cl_set_program(self, context, kernelselectric, kernelsmagnetic):
-        import pyopencl as cl  
-        import pyopencl.array as cl_array  
+        import pyopencl as cl
+        import pyopencl.array as cl_array
         self.elapsed = 0
         self.electric_prg = cl.Program(context, kernelselectric).build()
         self.magnetic_prg = cl.Program(context, kernelsmagnetic).build()
@@ -388,19 +387,19 @@ class PML(object):
             'order1_zplus' : self.magnetic_prg.order1_zplus,
             'order2_zplus' : self.magnetic_prg.order2_zplus
         }
-        
+
         function_name = 'order' + str(len(self.CFS)) + '_' + self.direction
 
         event = magnetic_kernel_functions[function_name](
-            queue, self.workgrouparam, None, 
-            np.int32(self.xs), np.int32(self.xf), np.int32(self.ys), 
-            np.int32(self.yf), np.int32(self.zs), np.int32(self.zf), 
-            np.int32(self.HPhi1.shape[1]), np.int32(self.HPhi1.shape[2]), np.int32(self.HPhi1.shape[3]), 
-            np.int32(self.HPhi2.shape[1]), np.int32(self.HPhi2.shape[2]), np.int32(self.HPhi2.shape[3]), 
-            np.int32(self.thickness), G.ID_cl.data, 
-            G.Ex_cl.data, G.Ey_cl.data, G.Ez_cl.data, 
-            G.Hx_cl.data, G.Hy_cl.data, G.Hz_cl.data, 
-            self.HPhi1_cl.data, self.HPhi2_cl.data, 
+            queue, self.workgrouparam, None,
+            np.int32(self.xs), np.int32(self.xf), np.int32(self.ys),
+            np.int32(self.yf), np.int32(self.zs), np.int32(self.zf),
+            np.int32(self.HPhi1.shape[1]), np.int32(self.HPhi1.shape[2]), np.int32(self.HPhi1.shape[3]),
+            np.int32(self.HPhi2.shape[1]), np.int32(self.HPhi2.shape[2]), np.int32(self.HPhi2.shape[3]),
+            np.int32(self.thickness), G.ID_cl.data,
+            G.Ex_cl.data, G.Ey_cl.data, G.Ez_cl.data,
+            G.Hx_cl.data, G.Hy_cl.data, G.Hz_cl.data,
+            self.HPhi1_cl.data, self.HPhi2_cl.data,
             self.HRA_cl.data, self.HRB_cl.data, self.HRE_cl.data, self.HRF_cl.data, np.float32(self.d)
         )
         event.wait()
@@ -431,15 +430,15 @@ class PML(object):
 
         event = electric_kernel_functions[function_name](
             queue, self.workgrouparam, None,
-            np.int32(self.xs), np.int32(self.xf), np.int32(self.ys), 
-            np.int32(self.yf), np.int32(self.zs), np.int32(self.zf), 
-            np.int32(self.EPhi1.shape[1]), np.int32(self.EPhi1.shape[2]), np.int32(self.EPhi1.shape[3]), 
-            np.int32(self.EPhi2.shape[1]), np.int32(self.EPhi2.shape[2]), np.int32(self.EPhi2.shape[3]), 
-            np.int32(self.thickness), G.ID_cl.data, 
-            G.Ex_cl.data, G.Ey_cl.data, G.Ez_cl.data, 
-            G.Hx_cl.data, G.Hy_cl.data, G.Hz_cl.data, 
-            self.EPhi1_cl.data, self.EPhi2_cl.data, 
-            self.ERA_cl.data, self.ERB_cl.data, self.ERE_cl.data, self.ERF_cl.data, np.float32(self.d)    
+            np.int32(self.xs), np.int32(self.xf), np.int32(self.ys),
+            np.int32(self.yf), np.int32(self.zs), np.int32(self.zf),
+            np.int32(self.EPhi1.shape[1]), np.int32(self.EPhi1.shape[2]), np.int32(self.EPhi1.shape[3]),
+            np.int32(self.EPhi2.shape[1]), np.int32(self.EPhi2.shape[2]), np.int32(self.EPhi2.shape[3]),
+            np.int32(self.thickness), G.ID_cl.data,
+            G.Ex_cl.data, G.Ey_cl.data, G.Ez_cl.data,
+            G.Hx_cl.data, G.Hy_cl.data, G.Hz_cl.data,
+            self.EPhi1_cl.data, self.EPhi2_cl.data,
+            self.ERA_cl.data, self.ERB_cl.data, self.ERE_cl.data, self.ERF_cl.data, np.float32(self.d)
         )
         event.wait()
         self.elapsed = 1e-9*(event.profile.end - event.profile.start)
