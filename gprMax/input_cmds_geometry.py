@@ -145,6 +145,8 @@ def process_geometrycmds(geometry, G):
                 if G.messages:
                     tqdm.write('Geometry objects from file (voxels only) {} inserted at {:g}m, {:g}m, {:g}m, with corresponding materials file {}.'.format(geofile, xs * G.dx, ys * G.dy, zs * G.dz, matfile))
 
+            f.close()
+
         elif tmp[0] == '#edge:':
             if len(tmp) != 8:
                 raise CmdInputError("'" + ' '.join(tmp) + "'" + ' requires exactly seven parameters')
