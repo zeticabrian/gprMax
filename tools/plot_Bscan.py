@@ -31,8 +31,8 @@ from .outputfiles_merge import get_output_data
 def mpl_plot(filename, outputdata, dt, rxnumber, rxcomponent,cmap):
     """Creates a plot (with matplotlib) of the B-scan.
 
-    Args:
-        filename (string): Filename (including path) of output file.
+    Args: 
+        filename a (string): Filename (including path) of output file.
         outputdata (array): Array of A-scans, i.e. B-scan data.
         dt (float): Temporal resolution of the model.
         rxnumber (int): Receiver output number.
