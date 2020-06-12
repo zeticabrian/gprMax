@@ -28,7 +28,7 @@ from gprMax.exceptions import CmdInputError
 from .outputfiles_merge import get_output_data
 
 
-def mpl_plot(filename, outputdata, dt, rxnumber, rxcomponent):
+def mpl_plot(filename, outputdata, dt, rxnumber, rxcomponent,cmap):
     """Creates a plot (with matplotlib) of the B-scan.
 
     Args:
@@ -45,7 +45,7 @@ def mpl_plot(filename, outputdata, dt, rxnumber, rxcomponent):
     (path, filename) = os.path.split(filename)
 
     fig = plt.figure(num=filename + ' - rx' + str(rxnumber), figsize=(20, 10), facecolor='w', edgecolor='w')
-    plt.imshow(outputdata, extent=[0, outputdata.shape[1], outputdata.shape[0] * dt, 0], interpolation='nearest', aspect='auto', cmap='seismic', vmin=-np.amax(np.abs(outputdata)), vmax=np.amax(np.abs(outputdata)))
+    plt.imshow(outputdata, extent=[0, outputdata.shape[1], outputdata.shape[0] * dt, 0], interpolation='nearest', aspect='auto', cmap=cmap, vmin=-np.amax(np.abs(outputdata)), vmax=np.amax(np.abs(outputdata)))
     plt.xlabel('Trace number')
     plt.ylabel('Time [s]')
     # plt.title('{}'.format(filename))
