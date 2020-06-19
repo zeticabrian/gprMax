@@ -123,6 +123,16 @@ def process_geometrycmds(geometry, G):
             if data.dtype != 'int16':
                 data = data.astype('int16')
 
+            #if voxel is placed before the start of the modeel domain we will trim the voxel
+            if xs < 0:
+                #if the entire voxel falls outside the model domain throw an error
+                if -xs > data.shape[0]:
+                    raise CmdInputError("'" + ' '.join(tmp) + "'" + ' occurs entirely outside the model domain (negative X)')
+                #trim the voxel to start at the origin of the domain
+                data = data[-xs:,:,:]
+                #reset the placement of the voxel to the domain origin
+                xs = 0
+            
             # Check that there are no values in the data greater than the maximum index for the specified materials
             if np.amax(data) > len(materials) - 1:
                 raise CmdInputError("'" + ' '.join(tmp) + "'" + ' found data value(s) ({}) in the geometry objects file greater than the maximum index for the specified materials ({})'.format(np.amax(data), len(materials) - 1))
