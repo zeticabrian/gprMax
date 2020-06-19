@@ -101,15 +101,19 @@ def calculate_antenna_params(filename, tltxnumber=1, tlrxnumber=None, rxnumber=N
     delaycorrection = np.exp(1j * 2 * np.pi * freqs * (dt / 2))
 
     # Calculate s11 and (optionally) s21
-    s11 = np.abs(np.fft.fft(Vref) / np.fft.fft(Vinc))
+    with np.errstate(divide='ignore'):
+        s11 = np.abs(np.fft.fft(Vref) / np.fft.fft(Vinc))
     if tlrxnumber or rxnumber:
-        s21 = np.abs(np.fft.fft(Vrec) / np.fft.fft(Vinc))
+        with np.errstate(divide='ignore'):
+            s21 = np.abs(np.fft.fft(Vrec) / np.fft.fft(Vinc))
 
     # Calculate input impedance
-    zin = (np.fft.fft(Vtotal) * delaycorrection) / np.fft.fft(Itotal)
+    with np.errstate(divide='ignore'):
+        zin = (np.fft.fft(Vtotal) * delaycorrection) / np.fft.fft(Itotal)
 
     # Calculate input admittance
-    yin = np.fft.fft(Itotal) / (np.fft.fft(Vtotal) * delaycorrection)
+    with np.errstate(divide='ignore'):
+        yin = np.fft.fft(Itotal) / (np.fft.fft(Vtotal) * delaycorrection)
 
     # Convert to decibels (ignore warning from taking a log of any zero values)
     with np.errstate(divide='ignore'):
@@ -340,7 +344,7 @@ def mpl_plot(filename, time, freqs, Vinc, Vincp, Iinc, Iincp, Vref, Vrefp, Iref,
 
     # Plot input resistance (real part of impedance)
     ax = plt.subplot(gs2[1, 0])
-    markerline, stemlines, baseline = ax.stem(freqs[pltrange], zin[pltrange].real, '-.' use_line_collection=True)
+    markerline, stemlines, baseline = ax.stem(freqs[pltrange], zin[pltrange].real, '-.', use_line_collection=True)
     plt.setp(baseline, 'linewidth', 0)
     plt.setp(stemlines, 'color', 'g')
     plt.setp(markerline, 'markerfacecolor', 'g', 'markeredgecolor', 'g')
@@ -355,7 +359,7 @@ def mpl_plot(filename, time, freqs, Vinc, Vincp, Iinc, Iincp, Vref, Vrefp, Iref,
 
     # Plot input reactance (imaginery part of impedance)
     ax = plt.subplot(gs2[1, 1])
-    markerline, stemlines, baseline = ax.stem(freqs[pltrange], zin[pltrange].imag, '-.' use_line_collection=True)
+    markerline, stemlines, baseline = ax.stem(freqs[pltrange], zin[pltrange].imag, '-.', use_line_collection=True)
     plt.setp(baseline, 'linewidth', 0)
     plt.setp(stemlines, 'color', 'g')
     plt.setp(markerline, 'markerfacecolor', 'g', 'markeredgecolor', 'g')
@@ -369,7 +373,7 @@ def mpl_plot(filename, time, freqs, Vinc, Vincp, Iinc, Iincp, Vref, Vrefp, Iref,
 
     # Plot input admittance (magnitude)
     # ax = plt.subplot(gs2[2, 0])
-    # markerline, stemlines, baseline = ax.stem(freqs[pltrange], np.abs(yin[pltrange]), '-.' use_line_collection=True)
+    # markerline, stemlines, baseline = ax.stem(freqs[pltrange], np.abs(yin[pltrange]), '-.', use_line_collection=True)
     # plt.setp(baseline, 'linewidth', 0)
     # plt.setp(stemlines, 'color', 'g')
     # plt.setp(markerline, 'markerfacecolor', 'g', 'markeredgecolor', 'g')
@@ -383,7 +387,7 @@ def mpl_plot(filename, time, freqs, Vinc, Vincp, Iinc, Iincp, Vref, Vrefp, Iref,
 
     # Plot input admittance (phase)
     # ax = plt.subplot(gs2[2, 1])
-    # markerline, stemlines, baseline = ax.stem(freqs[pltrange], np.angle(yin[pltrange], deg=True), '-.' use_line_collection=True)
+    # markerline, stemlines, baseline = ax.stem(freqs[pltrange], np.angle(yin[pltrange], deg=True), '-.', use_line_collection=True)
     # plt.setp(baseline, 'linewidth', 0)
     # plt.setp(stemlines, 'color', 'g')
     # plt.setp(markerline, 'markerfacecolor', 'g', 'markeredgecolor', 'g')
